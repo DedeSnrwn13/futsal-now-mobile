@@ -1,0 +1,38 @@
+name: futsal_now_mobile
+description: A new Flutter project.
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ">=3.1.4 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  extended_image: ^8.1.1
+  smooth_page_indicator: ^1.1.0
+  google_fonts: ^6.1.0
+  d_button: ^0.0.10
+  d_info: ^0.2.0
+  d_input: ^0.1.2
+  d_method: ^0.2.3
+  d_view: ^0.0.5
+  dartz: ^0.10.1
+  flutter_rating_bar: ^4.0.1
+  flutter_riverpod: ^2.4.8
+  intl: ^0.18.1
+  http: ^1.1.0
+  shared_preferences: ^2.2.2
+  whatsapp_unilink: ^2.1.0
+  url_launcher: ^6.2.2
+  grouped_list: ^5.1.2
+
+dev_dependencies:
+  flutter_lints: ^2.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
