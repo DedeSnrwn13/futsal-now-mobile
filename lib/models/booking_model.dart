@@ -7,8 +7,8 @@ class BookingModel {
   int groundId;
   int userId;
   DateTime orderDate;
-  DateTime startedAt;
-  DateTime endedAt;
+  String startedAt;
+  String endedAt;
   double totalPrice;
   String orderNumber;
   String orderSatus;
@@ -50,21 +50,21 @@ class BookingModel {
         groundId: json["ground_id"],
         userId: json["user_id"],
         orderDate: DateTime.parse(json["order_date"]).toLocal(),
-        startedAt: DateTime.parse(json["started_at"]).toLocal(),
-        endedAt: DateTime.parse(json["ended_at"]).toLocal(),
-        totalPrice: json["total_price"],
+        startedAt: json["started_at"],
+        endedAt: json["ended_at"],
+        totalPrice: json["total_price"].toDouble(),
         orderNumber: json["order_number"],
         orderSatus: json["order_status"],
-        paymentMethod: json["paymentMethod"],
-        paymentStatus: json["paymentStatus"],
-        paidAt: DateTime.parse(json["paid_at"]).toLocal(),
+        paymentMethod: json["payment_method"],
+        paymentStatus: json["payment_status"],
+        paidAt: json["paid_at"] != null ? DateTime.parse(json["paid_at"]).toLocal() : null,
         promoId: json["promo_id"],
         refId: json["ref_id"],
         createdAt: DateTime.parse(json["created_at"]).toLocal(),
         updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
         ground: GroundModel.fromJson(json["ground"]),
         user: UserModel.fromJson(json["user"]),
-        promo: PromoModel.fromJson(json["promo"]),
+        promo: json["promo"] != null ? PromoModel.fromJson(json["promo"]) : null,
       );
 
   Map<String, dynamic> toJson() => {

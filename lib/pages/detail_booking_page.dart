@@ -35,12 +35,18 @@ class DetailBookingPage extends StatelessWidget {
           divider(),
           itemInfo(Icons.event, AppFormat.fullDate(booking.createdAt)),
           divider(),
+          itemInfo(Icons.timelapse_outlined, '${booking.startedAt} - ${booking.endedAt}'),
+          divider(),
           InkWell(
             onTap: () {
               Nav.push(context, DetailSportArenaPage(sportArena: booking.ground.sportArena));
             },
-            child: itemInfo(Icons.store, booking.ground.sportArena.name),
+            child: itemInfo(Icons.stadium_outlined, booking.ground.sportArena.name),
           ),
+          divider(),
+          itemInfo(Icons.payment_outlined, booking.paymentMethod),
+          divider(),
+          itemInfo(Icons.payments_outlined, booking.paymentStatus),
           divider(),
         ],
       ),
@@ -156,7 +162,7 @@ class DetailBookingPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ID: ${booking.id}',
+                      'ID: ${booking.orderNumber}',
                       style: const TextStyle(
                         fontSize: 18,
                         color: Colors.white,

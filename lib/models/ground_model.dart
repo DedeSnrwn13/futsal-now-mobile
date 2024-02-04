@@ -8,7 +8,7 @@ class GroundModel {
   double rentalPrice;
   int capacity;
   bool isAvailable;
-  List<Map> image;
+  List<String> image;
   DateTime createdAt;
   DateTime updatedAt;
   SportArenaModel sportArena;
@@ -39,7 +39,7 @@ class GroundModel {
         rentalPrice: json["rental_price"]?.toDouble(),
         capacity: json["capacity"],
         isAvailable: json["is_available"] == 1,
-        image: parseImage(json["image"]),
+        image: _parseImage(json["image"]),
         createdAt: DateTime.parse(json["created_at"]).toLocal(),
         updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
         sportArena: SportArenaModel.fromJson(json["sport_arena"]),
@@ -55,7 +55,7 @@ class GroundModel {
         "rental_price": rentalPrice,
         "capacity": capacity,
         "is_available": isAvailable,
-        "image": image,
+        "image": image.join(','),
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
         "sportArena": sportArena,
@@ -63,13 +63,14 @@ class GroundModel {
         "image_thumbnail": imgThumbnail,
       };
 
-  static List<Map<String, String>> parseImage(dynamic image) {
-    if (image is String) {
-      final List<String> filenames = image.split(',');
-      return filenames.map((filename) => {'filename': filename}).toList();
-    } else if (image is List) {
-      return image.whereType<Map<String, String>>().toList();
+  static List<String> _parseImage(dynamic imageData) {
+    if (imageData is String) {
+      return imageData.split(',');
+    } else if (imageData is List<dynamic>) {
+      // Handle List<dynamic> case (you might need to adjust this based on your data structure)
+      return imageData.map((item) => item.toString()).toList();
     } else {
+      // Handle other cases or return an empty list based on your requirements
       return [];
     }
   }

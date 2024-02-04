@@ -7,6 +7,12 @@ setMyBookingStatus(WidgetRef ref, String newStatus) {
   ref.read(myBookingStatusProvider.notifier).state = newStatus;
 }
 
+final bookingStatusProvider = StateProvider.autoDispose((ref) => '');
+
+setBookingStatus(WidgetRef ref, String newStatus) {
+  ref.read(bookingStatusProvider.notifier).state = newStatus;
+}
+
 final myBookingCategoryProvider = StateProvider.autoDispose((ref) => 'All');
 
 setMyBookingCategory(WidgetRef ref, String newCategory) {

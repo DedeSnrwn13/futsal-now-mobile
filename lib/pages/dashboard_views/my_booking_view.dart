@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:d_info/d_info.dart';
 import 'package:d_input/d_input.dart';
 import 'package:d_view/d_view.dart';
@@ -66,8 +68,7 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
   }
 
   dialogCancel() {
-    final editLaundryID = TextEditingController();
-    final editClaimCode = TextEditingController();
+    final editOrderNumber = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -78,22 +79,14 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
           child: SimpleDialog(
             titlePadding: const EdgeInsets.all(16),
             contentPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            title: const Text('Claim Laundry'),
+            title: const Text('Cancel Booking'),
             children: [
               DInput(
-                controller: editLaundryID,
-                title: 'Laundry ID',
+                controller: editOrderNumber,
+                title: 'Order Number',
                 radius: BorderRadius.circular(10),
                 validator: (input) => input == '' ? "Don't empty" : null,
                 inputType: TextInputType.number,
-              ),
-              DView.height(8),
-              DInput(
-                controller: editClaimCode,
-                title: 'Claim Code',
-                radius: BorderRadius.circular(10),
-                validator: (input) => input == '' ? "Don't empty" : null,
-                inputType: TextInputType.text,
               ),
               DView.height(20),
               ElevatedButton(
@@ -101,15 +94,15 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
                   if (formKey.currentState!.validate()) {
                     Navigator.pop(context);
 
-                    cancelNow(editLaundryID.text, editClaimCode.text);
+                    cancelNow(editOrderNumber.text);
                   }
                 },
-                child: const Text('Claim Now'),
+                child: const Text('Cancel Now'),
               ),
               DView.height(8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel'),
+                child: const Text('Close'),
               ),
             ],
           ),
@@ -118,8 +111,8 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
     );
   }
 
-  cancelNow(String id, String claimCode) {
-    BookingDatasource.cancelById(id).then((value) {
+  cancelNow(String orderNumber) {
+    BookingDatasource.cancelOrderNumber(orderNumber).then((value) {
       value.fold(
         (failure) {
           switch (failure.runtimeType) {
@@ -133,7 +126,7 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
               DInfo.toastError('You don\'t have access');
               break;
             case BadRequestFailure:
-              DInfo.toastError('Laundry has been claimed');
+              DInfo.toastError('Booking has been canceled');
               break;
             case InvalidInputFailure:
               AppResponse.invalidInput(context, failure.message ?? '{}');
@@ -147,7 +140,7 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
           }
         },
         (result) {
-          DInfo.toastSuccess('Claim Success');
+          DInfo.toastSuccess('Cancel Success');
           getMyBooking();
         },
       );
@@ -268,12 +261,12 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    booking.ground.name,
+                                    'Lapangan: ${booking.ground.name}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 18,
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ),
@@ -288,7 +281,13 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
                                 ),
                               ],
                             ),
-                            DView.height(12),
+                            DView.height(8),
+                            Row(
+                              children: [
+                                Text('${booking.startedAt} - ${booking.endedAt}'),
+                              ],
+                            ),
+                            DView.height(8),
                           ],
                         ),
                       ),
@@ -359,7 +358,7 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'My Laundry',
+            'My Booking',
             style: GoogleFonts.montserrat(
               fontSize: 24,
               color: Colors.blue,
@@ -372,7 +371,7 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
               onPressed: () => dialogCancel(),
               icon: const Icon(Icons.add),
               label: const Text(
-                'Claim',
+                'Cancel',
                 style: TextStyle(height: 1),
               ),
               style: ButtonStyle(

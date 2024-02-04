@@ -1,18 +1,33 @@
 // ignore_for_file: file_names
 
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:futsal_now_mobile/config/app_assets.dart';
 import 'package:futsal_now_mobile/config/app_colors.dart';
+import 'package:futsal_now_mobile/config/app_response.dart';
 import 'package:futsal_now_mobile/config/app_session.dart';
+import 'package:futsal_now_mobile/config/failure.dart';
 import 'package:futsal_now_mobile/config/nav.dart';
+import 'package:futsal_now_mobile/datasources/user_datasource.dart';
 import 'package:futsal_now_mobile/models/user_model.dart';
 import 'package:futsal_now_mobile/pages/auth/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:d_view/d_view.dart';
+import 'package:futsal_now_mobile/providers/user_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:d_info/d_info.dart';
 
-class AccountView extends StatelessWidget {
+class AccountView extends ConsumerStatefulWidget {
   const AccountView({super.key});
+
+  @override
+  ConsumerState<AccountView> createState() => _AccountViewState();
+}
+
+class _AccountViewState extends ConsumerState<AccountView> {
+  final GlobalKey<FormState> _formKeyFeedback = GlobalKey<FormState>();
+  final TextEditingController bodyController = TextEditingController();
+  double rating = 0.0;
 
   logout(BuildContext context) {
     DInfo.dialogConfirmation(
@@ -26,6 +41,52 @@ class AccountView extends StatelessWidget {
         AppSession.removeBearerToken();
         Nav.replace(context, const LoginPage());
       }
+    });
+  }
+
+  submitFeedback(String body, double rate) {
+    UserDatasource.feedback(
+      body,
+      rate,
+    ).then((value) {
+      value.fold(
+        (failure) {
+          String newStatus = '';
+
+          switch (failure.runtimeType) {
+            case ServerFailure:
+              setfeedbackStatus(ref, 'Server Error');
+              break;
+            case NotFoundFailure:
+              setfeedbackStatus(ref, 'Error Not Found');
+              break;
+            case ForbiddenFailure:
+              setfeedbackStatus(ref, 'You don\'t have access');
+              break;
+            case BadRequestFailure:
+              setfeedbackStatus(ref, 'Bad Request');
+              break;
+            case InvalidInputFailure:
+              var newStatus = 'Invalid Input';
+              AppResponse.invalidInput(context, failure.message ?? '{}');
+              setfeedbackStatus(ref, newStatus);
+              break;
+            case UnauthorisedFailure:
+              newStatus = 'Unauthorized';
+              DInfo.toastError(newStatus);
+              break;
+            default:
+              newStatus = failure.message ?? '-';
+              setfeedbackStatus(ref, newStatus);
+              DInfo.toastError(newStatus);
+              break;
+          }
+        },
+        (result) {
+          setfeedbackStatus(ref, 'Success');
+          DInfo.toastSuccess(result['message']);
+        },
+      );
     });
   }
 
@@ -183,7 +244,66 @@ class AccountView extends StatelessWidget {
             ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 30),
-              onTap: () {},
+              onTap: () {
+                showAboutDialog(
+                  context: context,
+                  applicationIcon: const Icon(
+                    Icons.feedback,
+                    size: 50,
+                    color: AppColor.primary,
+                  ),
+                  children: [
+                    Form(
+                      key: _formKeyFeedback,
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: bodyController,
+                            decoration: const InputDecoration(labelText: 'Feedback Body'),
+                            maxLines: 3,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Feedback body is required';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          RatingBar.builder(
+                            initialRating: rating,
+                            minRating: 0,
+                            direction: Axis.horizontal,
+                            allowHalfRating: true,
+                            itemCount: 5,
+                            itemSize: 30,
+                            itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                            itemBuilder: (context, index) => const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                            ),
+                            onRatingUpdate: (newRating) {
+                              setState(() {
+                                rating = newRating;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (_formKeyFeedback.currentState!.validate()) {
+                                Navigator.pop(context);
+
+                                submitFeedback(bodyController.text, rating);
+                              }
+                            },
+                            child: const Text('Submit Feedback'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
               dense: true,
               horizontalTitleGap: 0,
               leading: const Icon(Icons.feedback),

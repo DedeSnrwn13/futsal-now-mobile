@@ -6,15 +6,15 @@ import 'package:flutter/material.dart';
 class AppConstants {
   static const appName = 'FutsalNow';
 
-  static const _host = 'http://127.0.0.1:8000';
+  static const _host = 'http://50.50.0.171:8000';
 
   static const baseURL = '$_host/api/auth';
 
   static const baseImageURL = '$_host/storage';
 
-  static const paymentStatus = ['Pending', 'Success', 'Failed'];
+  static const paymentStatus = ['All', 'pending', 'success', 'failed'];
 
-  static const orderStatus = ['Processing', 'Finished', 'Canceled'];
+  static const orderStatus = ['All', 'processing', 'finished', 'canceled'];
 
   static List<Map> navMenuDashboard = [
     {
@@ -25,7 +25,7 @@ class AppConstants {
     {
       'view': const MyBookingView(),
       'icon': Icons.sports_soccer_outlined,
-      'label': 'My Laundry',
+      'label': 'My Booking',
     },
     {
       'view': const AccountView(),

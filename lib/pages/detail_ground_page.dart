@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:d_info/d_info.dart';
 import 'package:d_view/d_view.dart';
+import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:futsal_now_mobile/config/app_assets.dart';
 import 'package:futsal_now_mobile/config/app_colors.dart';
@@ -7,14 +10,19 @@ import 'package:futsal_now_mobile/config/app_constants.dart';
 import 'package:futsal_now_mobile/config/app_format.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
+import 'package:futsal_now_mobile/config/app_response.dart';
+import 'package:futsal_now_mobile/config/app_session.dart';
 import 'package:futsal_now_mobile/config/failure.dart';
+import 'package:futsal_now_mobile/datasources/booking_datasource.dart';
 import 'package:futsal_now_mobile/datasources/sport_arena_datasource.dart';
 import 'package:futsal_now_mobile/models/ground_model.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:futsal_now_mobile/models/user_model.dart';
+import 'package:futsal_now_mobile/providers/my_booking_provider.dart';
 import 'package:futsal_now_mobile/providers/sport_arena_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:whatsapp_unilink/whatsapp_unilink.dart';
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:intl/intl.dart';
 
 class DetailGroundPage extends ConsumerStatefulWidget {
   const DetailGroundPage({super.key, required this.ground});
@@ -26,6 +34,93 @@ class DetailGroundPage extends ConsumerStatefulWidget {
 }
 
 class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
+  late UserModel user;
+
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  TextEditingController dateController = TextEditingController();
+  TextEditingController startTimeController = TextEditingController();
+  TextEditingController endTimeController = TextEditingController();
+  TextEditingController paymentMethodController = TextEditingController(text: 'BCA');
+
+  double calculateTotalPrice(DateTime startTime, DateTime endTime) {
+    return widget.ground.rentalPrice * (endTime.difference(startTime).inHours);
+  }
+
+  bookingNow() {
+    if (dateController.text.isEmpty || startTimeController.text.isEmpty || endTimeController.text.isEmpty) {
+      DInfo.toastError('One or more required fields are empty');
+      setBookingStatus(ref, 'One or more required fields are empty');
+      return;
+    }
+
+    DateTime selectedDate = DateFormat('yyyy-MM-dd').parse(dateController.text);
+    DateTime startTime = DateFormat('HH:mm').parse(startTimeController.text);
+    DateTime endTime = DateFormat('HH:mm').parse(endTimeController.text);
+
+    if (startTime == null) {
+      DInfo.toastError('One or more parsed DateTime fields are null');
+      setBookingStatus(ref, 'One or more parsed DateTime fields are null');
+      return;
+    }
+
+    double totalPrice = calculateTotalPrice(startTime, endTime);
+
+    if (totalPrice <= 0) {
+      DInfo.toastError('Total rental price is zero or negative');
+      setBookingStatus(ref, 'Total rental price is zero or negative');
+      return;
+    }
+
+    BookingDatasource.booking(
+      widget.ground.sportArena.id.toString(),
+      widget.ground.id.toString(),
+      selectedDate.toString(),
+      startTime.toString(),
+      endTime.toString(),
+      totalPrice.toDouble().toString(),
+      paymentMethodController.text,
+    ).then((value) {
+      value.fold(
+        (failure) {
+          String newStatus = '';
+
+          switch (failure.runtimeType) {
+            case ServerFailure:
+              setBookingStatus(ref, 'Server Error');
+              break;
+            case NotFoundFailure:
+              setBookingStatus(ref, 'Error Not Found');
+              break;
+            case ForbiddenFailure:
+              setBookingStatus(ref, 'You don\'t have access');
+              break;
+            case BadRequestFailure:
+              setBookingStatus(ref, 'Bad Request');
+              break;
+            case InvalidInputFailure:
+              var newStatus = 'Invalid Input';
+              AppResponse.invalidInput(context, failure.message ?? '{}');
+              setBookingStatus(ref, newStatus);
+              break;
+            case UnauthorisedFailure:
+              newStatus = 'Unauthorized';
+              DInfo.toastError(newStatus);
+              break;
+            default:
+              newStatus = failure.message ?? '-';
+              setBookingStatus(ref, newStatus);
+              DInfo.toastError(newStatus);
+              break;
+          }
+        },
+        (result) {
+          setBookingStatus(ref, 'Success');
+        },
+      );
+    });
+  }
+
   getGrounds(String sportArenaId, String groundId) {
     SportArenaDatasource.getGroundById(sportArenaId, groundId).then((value) {
       value.fold(
@@ -91,6 +186,12 @@ class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
   void initState() {
     refresh();
 
+    AppSession.getUser().then((value) {
+      setState(() {
+        user = value!;
+      });
+    });
+
     super.initState();
   }
 
@@ -111,7 +212,9 @@ class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
             height: 50,
             margin: const EdgeInsets.symmetric(horizontal: 24),
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                _showBookingForm(context);
+              },
               child: const Text(
                 'Booking',
                 style: TextStyle(
@@ -124,6 +227,156 @@ class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
           DView.height(20),
         ],
       ),
+    );
+  }
+
+  void _showBookingForm(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DView.height(20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: TextField(
+                      controller: dateController,
+                      decoration: const InputDecoration(labelText: 'Select Date'),
+                      readOnly: true,
+                      onTap: () async {
+                        DateTime? pickedDate = await showDatePicker(
+                          context: context,
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime(2024),
+                          lastDate: DateTime(2100),
+                        );
+
+                        if (pickedDate != null) {
+                          String formattedDate = DateFormat('yyyy-MM-dd').format(pickedDate);
+
+                          setState(() {
+                            dateController.text = formattedDate;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  DView.height(20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: TextField(
+                      controller: startTimeController,
+                      decoration: const InputDecoration(labelText: 'Start Time'),
+                      readOnly: true,
+                      onTap: () async {
+                        TimeOfDay? pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+
+                        if (pickedTime != null) {
+                          // ignore: use_build_context_synchronously
+                          String formattedTime = pickedTime.format(context);
+
+                          setState(() {
+                            startTimeController.text = formattedTime;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  DView.height(20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: TextField(
+                      controller: endTimeController,
+                      decoration: const InputDecoration(labelText: 'End Time'),
+                      readOnly: true,
+                      onTap: () async {
+                        TimeOfDay? pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                        );
+
+                        if (pickedTime != null) {
+                          // ignore: use_build_context_synchronously
+                          String formattedTime = pickedTime.format(context);
+
+                          setState(() {
+                            endTimeController.text = formattedTime;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  DView.height(20),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Method',
+                      ),
+                      value: paymentMethodController.text,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          paymentMethodController.text = newValue!;
+                        });
+                      },
+                      items: ['BCA', 'BNI'].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  // DView.height(20),
+                  // Container(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 14),
+                  //   child: Text(
+                  //     'Total Price: ${startTimeController.text.isNotEmpty && endTimeController.text.isNotEmpty ? calculateTotalPrice(
+                  //         DateFormat('HH:mm').parse(startTimeController.text),
+                  //         DateFormat('HH:mm').parse(endTimeController.text),
+                  //       ) : 0.0}',
+                  //     style: const TextStyle(
+                  //       color: Colors.black87,
+                  //       fontSize: 16,
+                  //     ),
+                  //   ),
+                  // ),
+                  DView.height(20),
+                  Container(
+                    height: 50,
+                    margin: const EdgeInsets.symmetric(horizontal: 14),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          Navigator.pop(context);
+
+                          bookingNow();
+                        }
+                      },
+                      child: const Text(
+                        'Booking',
+                        style: TextStyle(
+                          height: 1,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                  DView.height(20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -157,6 +410,15 @@ class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                itemInfo(
+                  const Icon(
+                    Icons.hourglass_bottom,
+                    color: AppColor.primary,
+                    size: 20,
+                  ),
+                  'Per Hour',
+                ),
+                DView.height(8),
                 itemInfo(
                   const Icon(
                     Icons.stadium_outlined,
@@ -236,30 +498,35 @@ class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(30),
-              child: CarouselSlider(
-                options: CarouselOptions(
-                  height: 400.0,
-                  enlargeCenterPage: true,
-                  autoPlay: true,
-                  aspectRatio: 1,
-                  onPageChanged: (index, reason) {
-                    // Handle page change if needed
-                  },
-                ),
-                items: widget.ground.image.map<Widget>((filename) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ExtendedImage.network(
-                      '${AppConstants.baseImageURL}/${filename['filename']}',
-                      fit: BoxFit.cover,
-                      cache: true,
-                      shape: BoxShape.rectangle,
-                    ),
+            ImageSlideshow(
+              width: double.infinity,
+              height: 200,
+              initialPage: 0,
+              indicatorColor: Colors.blue,
+              indicatorBackgroundColor: Colors.grey,
+              onPageChanged: (value) {},
+              autoPlayInterval: 3000,
+              isLoop: true,
+              children: widget.ground.image.map<Widget>(
+                (filename) {
+                  return ExtendedImage.network(
+                    '${AppConstants.baseImageURL}/$filename',
+                    fit: BoxFit.cover,
+                    cache: true,
+                    shape: BoxShape.rectangle,
+                    loadStateChanged: (ExtendedImageState state) {
+                      switch (state.extendedImageLoadState) {
+                        case LoadState.loading:
+                          return DView.loadingCircle();
+                        case LoadState.completed:
+                          return null;
+                        case LoadState.failed:
+                          return const Icon(Icons.error);
+                      }
+                    },
                   );
-                }).toList(),
-              ),
+                },
+              ).toList(),
             ),
             Align(
               alignment: Alignment.bottomCenter,
