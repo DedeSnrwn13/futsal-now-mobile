@@ -1,4 +1,3 @@
-
 import 'package:d_info/d_info.dart';
 import 'package:d_view/d_view.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,8 +109,8 @@ class _DetailSportArenaPageState extends ConsumerState<DetailSportArenaPage> {
           headerImage(context),
           DView.height(10),
           groupItemInfo(context),
-          DView.height(20),
-          category(),
+          // DView.height(20),
+          // category(),
           DView.height(20),
           description(),
           DView.height(20),
