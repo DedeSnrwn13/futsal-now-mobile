@@ -7,65 +7,65 @@ import 'package:futsal_now_mobile/config/app_response.dart';
 import 'package:futsal_now_mobile/config/app_session.dart';
 import 'package:futsal_now_mobile/config/failure.dart';
 import 'package:futsal_now_mobile/config/nav.dart';
-import 'package:futsal_now_mobile/datasources/laundry_datasource.dart';
-import 'package:futsal_now_mobile/models/laundry_model.dart';
+import 'package:futsal_now_mobile/datasources/booking_datasource.dart';
+import 'package:futsal_now_mobile/models/booking_model.dart';
 import 'package:futsal_now_mobile/models/user_model.dart';
-import 'package:futsal_now_mobile/pages/detail_laundry_page.dart';
-import 'package:futsal_now_mobile/providers/my_laundry_provider.dart';
+import 'package:futsal_now_mobile/pages/detail_booking_page.dart';
+import 'package:futsal_now_mobile/providers/my_booking_provider.dart';
 import 'package:futsal_now_mobile/widgets/error_background.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:grouped_list/grouped_list.dart';
 
-class MyLaundryView extends ConsumerStatefulWidget {
-  const MyLaundryView({super.key});
+class MyBookingView extends ConsumerStatefulWidget {
+  const MyBookingView({super.key});
 
   @override
-  ConsumerState<MyLaundryView> createState() => _MyLaundryViewState();
+  ConsumerState<MyBookingView> createState() => _MyBookingViewState();
 }
 
-class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
+class _MyBookingViewState extends ConsumerState<MyBookingView> {
   late UserModel user;
 
-  getMyLaundry() {
-    LaundryDatasource.readByUser(user.id).then((value) {
+  getMyBooking() {
+    BookingDatasource.history().then((value) {
       value.fold(
         (failure) {
           switch (failure.runtimeType) {
             case ServerFailure:
-              setMyLaundryStatus(ref, 'Server Error');
+              setMyBookingStatus(ref, 'Server Error');
               break;
             case NotFoundFailure:
-              setMyLaundryStatus(ref, 'Error Not Found');
+              setMyBookingStatus(ref, 'Error Not Found');
               break;
             case ForbiddenFailure:
-              setMyLaundryStatus(ref, 'You don\'t have access');
+              setMyBookingStatus(ref, 'You don\'t have access');
               break;
             case BadRequestFailure:
-              setMyLaundryStatus(ref, 'Bad Request');
+              setMyBookingStatus(ref, 'Bad Request');
               break;
             case UnauthorisedFailure:
-              setMyLaundryStatus(ref, 'Unauthorised');
+              setMyBookingStatus(ref, 'Unauthorised');
               break;
             default:
-              setMyLaundryStatus(ref, 'Request Error');
+              setMyBookingStatus(ref, 'Request Error');
               break;
           }
         },
         (result) {
-          setMyLaundryStatus(ref, 'Success');
+          setMyBookingStatus(ref, 'Success');
 
           List data = result['data'];
-          List<LaundryModel> laundries = data.map((e) => LaundryModel.fromJson(e)).toList();
+          List<BookingModel> bookings = data.map((e) => BookingModel.fromJson(e)).toList();
 
-          ref.read(myLaundryListProvider.notifier).setData(laundries);
+          ref.read(myBookingListProvider.notifier).setData(bookings);
         },
       );
     });
   }
 
-  dialogClaim() {
+  dialogCancel() {
     final editLaundryID = TextEditingController();
     final editClaimCode = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -101,7 +101,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                   if (formKey.currentState!.validate()) {
                     Navigator.pop(context);
 
-                    claimNow(editLaundryID.text, editClaimCode.text);
+                    cancelNow(editLaundryID.text, editClaimCode.text);
                   }
                 },
                 child: const Text('Claim Now'),
@@ -118,8 +118,8 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
     );
   }
 
-  claimNow(String id, String claimCode) {
-    LaundryDatasource.claim(id, claimCode).then((value) {
+  cancelNow(String id, String claimCode) {
+    BookingDatasource.cancelById(id).then((value) {
       value.fold(
         (failure) {
           switch (failure.runtimeType) {
@@ -148,7 +148,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
         },
         (result) {
           DInfo.toastSuccess('Claim Success');
-          getMyLaundry();
+          getMyBooking();
         },
       );
     });
@@ -158,7 +158,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
   void initState() {
     AppSession.getUser().then((value) {
       user = value!;
-      getMyLaundry();
+      getMyBooking();
     });
 
     super.initState();
@@ -172,12 +172,12 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
         categories(),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () async => getMyLaundry(),
+            onRefresh: () async => getMyBooking(),
             child: Consumer(
               builder: (_, wiRef, __) {
-                String statusList = wiRef.watch(myLaundryStatusProvider);
-                String statusCategory = wiRef.watch(myLaundryCategoryProvider);
-                List<LaundryModel> listBackup = wiRef.watch(myLaundryListProvider);
+                String statusList = wiRef.watch(myBookingStatusProvider);
+                String statusCategory = wiRef.watch(myBookingCategoryProvider);
+                List<BookingModel> listBackup = wiRef.watch(myBookingListProvider);
 
                 if (statusList == '') return DView.loadingCircle();
 
@@ -191,12 +191,12 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                   );
                 }
 
-                List<LaundryModel> list = [];
+                List<BookingModel> list = [];
 
                 if (statusCategory == 'All') {
                   list = List.from(listBackup);
                 } else {
-                  list = listBackup.where((element) => element.status == statusCategory).toList();
+                  list = listBackup.where((element) => element.orderSatus == statusCategory).toList();
                 }
 
                 if (list.isEmpty) {
@@ -209,7 +209,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                           message: 'Empty',
                         ),
                         IconButton(
-                          onPressed: () => getMyLaundry(),
+                          onPressed: () => getMyBooking(),
                           icon: const Icon(
                             Icons.refresh,
                             color: Colors.white,
@@ -220,7 +220,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                   );
                 }
 
-                return GroupedListView<LaundryModel, String>(
+                return GroupedListView<BookingModel, String>(
                   padding: const EdgeInsets.fromLTRB(30, 0, 30, 80),
                   elements: list,
                   groupBy: (element) => AppFormat.justDate(element.createdAt),
@@ -245,13 +245,13 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                       ),
                     ),
                   ),
-                  itemBuilder: (context, laundry) {
+                  itemBuilder: (context, booking) {
                     return GestureDetector(
                       onTap: () {
                         Nav.push(
                           context,
-                          DetailLaundryPage(
-                            laundry: laundry,
+                          DetailBookingPage(
+                            booking: booking,
                           ),
                         );
                       },
@@ -268,7 +268,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    laundry.shop.name,
+                                    booking.ground.name,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
@@ -279,7 +279,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                                 ),
                                 DView.width(16),
                                 Text(
-                                  AppFormat.longPrice(laundry.total),
+                                  AppFormat.longPrice(booking.totalPrice),
                                   textAlign: TextAlign.end,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w500,
@@ -289,57 +289,6 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
                               ],
                             ),
                             DView.height(12),
-                            Row(
-                              children: [
-                                if (laundry.withPickup)
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    margin: const EdgeInsets.only(right: 8),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    child: const Text(
-                                      'Pickup',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        height: 1,
-                                      ),
-                                    ),
-                                  ),
-                                if (laundry.withDelivery)
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    margin: const EdgeInsets.only(right: 8),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    child: const Text(
-                                      'Delivery',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        height: 1,
-                                      ),
-                                    ),
-                                  ),
-                                Expanded(
-                                  child: Text(
-                                    '${laundry.weight}kg',
-                                    textAlign: TextAlign.end,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w300,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
@@ -356,24 +305,24 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
 
   Consumer categories() {
     return Consumer(builder: (_, wiRef, __) {
-      String categorySelected = wiRef.watch(myLaundryCategoryProvider);
+      String categorySelected = wiRef.watch(myBookingCategoryProvider);
 
       return SizedBox(
         height: 30,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
-          itemCount: AppConstants.laundryStatusCategory.length,
+          itemCount: AppConstants.orderStatus.length,
           itemBuilder: (context, index) {
-            String category = AppConstants.laundryStatusCategory[index];
+            String category = AppConstants.orderStatus[index];
 
             return Padding(
               padding: EdgeInsets.only(
                 left: index == 0 ? 30 : 8,
-                right: index == AppConstants.laundryStatusCategory.length - 1 ? 30 : 8,
+                right: index == AppConstants.orderStatus.length - 1 ? 30 : 8,
               ),
               child: InkWell(
                 onTap: () {
-                  setMyLaundryCategory(ref, category);
+                  setMyBookingCategory(ref, category);
                 },
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
@@ -420,7 +369,7 @@ class _MyLaundryViewState extends ConsumerState<MyLaundryView> {
           Transform.translate(
             offset: const Offset(0, -8),
             child: OutlinedButton.icon(
-              onPressed: () => dialogClaim(),
+              onPressed: () => dialogCancel(),
               icon: const Icon(Icons.add),
               label: const Text(
                 'Claim',

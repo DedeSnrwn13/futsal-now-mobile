@@ -1,6 +1,6 @@
 import 'package:futsal_now_mobile/pages/dashboard_views/account_view.dart';
 import 'package:futsal_now_mobile/pages/dashboard_views/home_view.dart';
-import 'package:futsal_now_mobile/pages/dashboard_views/my_laundry_view.dart';
+import 'package:futsal_now_mobile/pages/dashboard_views/my_booking_view.dart';
 import 'package:flutter/material.dart';
 
 class AppConstants {
@@ -16,8 +16,6 @@ class AppConstants {
 
   static const orderStatus = ['Processing', 'Finished', 'Canceled'];
 
-  static const laundryStatusCategory = ['All', 'Pickup', 'Queue', 'Process', 'Washing', 'Dried', 'Ironed', 'Done', 'Delivery'];
-
   static List<Map> navMenuDashboard = [
     {
       'view': const HomeView(),
@@ -25,8 +23,8 @@ class AppConstants {
       'label': 'Home',
     },
     {
-      'view': const MyLaundryView(),
-      'icon': Icons.local_laundry_service,
+      'view': const MyBookingView(),
+      'icon': Icons.sports_soccer_outlined,
       'label': 'My Laundry',
     },
     {

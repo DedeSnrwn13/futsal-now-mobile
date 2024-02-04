@@ -1,13 +1,12 @@
-// import 'package:futsal_now_mobile/config/app_assets.dart';
 import 'package:futsal_now_mobile/config/app_colors.dart';
 import 'package:futsal_now_mobile/config/app_constants.dart';
 import 'package:futsal_now_mobile/config/failure.dart';
 import 'package:futsal_now_mobile/config/nav.dart';
 import 'package:futsal_now_mobile/datasources/promo_datasource.dart';
-import 'package:futsal_now_mobile/datasources/shop_datasource.dart';
+import 'package:futsal_now_mobile/datasources/sport_arena_datasource.dart';
 import 'package:futsal_now_mobile/models/promo_model.dart';
-import 'package:futsal_now_mobile/models/shop_model.dart';
-import 'package:futsal_now_mobile/pages/detail_shop_page.dart';
+import 'package:futsal_now_mobile/models/sport_arena_model.dart';
+import 'package:futsal_now_mobile/pages/detail_sport_arena_page.dart';
 import 'package:futsal_now_mobile/pages/search_by_city_page.dart';
 import 'package:futsal_now_mobile/providers/home_provider.dart';
 import 'package:futsal_now_mobile/widgets/error_background.dart';
@@ -73,7 +72,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
   }
 
   getRecommendation() {
-    ShopDatasource.readRecommendationLimit().then((value) {
+    SportArenaDatasource.readRecommendationLimit().then((value) {
       value.fold(
         (failure) {
           switch (failure.runtimeType) {
@@ -101,7 +100,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           setHomeRecommendationStatus(ref, 'Success');
 
           List data = result['data'];
-          List<ShopModel> shops = data.map((e) => ShopModel.fromJson(e)).toList();
+          List<SportArenaModel> shops = data.map((e) => SportArenaModel.fromJson(e)).toList();
 
           ref.read(homeRecommendationListProvider.notifier).setData(shops);
         },
@@ -145,7 +144,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'We\'re ready',
+            'Welcome back',
             style: GoogleFonts.ptSans(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -153,7 +152,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
           ),
           DView.height(4),
           Text(
-            'to clean your clothes',
+            'to FutsalNow',
             style: GoogleFonts.ptSans(
               color: Colors.black54,
               fontSize: 20,
@@ -298,7 +297,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                DView.textTitle('Promo', color: Colors.black),
+                DView.textTitle('Voucher', color: Colors.black),
                 DView.textAction(() {}, color: AppColor.primary),
               ],
             ),
@@ -308,7 +307,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
               padding: EdgeInsets.symmetric(horizontal: 30),
               child: ErrorBackground(
                 ratio: 16 / 9,
-                message: 'No Promo',
+                message: 'No Voucher',
               ),
             ),
           if (list.isNotEmpty)
@@ -325,28 +324,64 @@ class _HomeViewState extends ConsumerState<HomeView> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Padding(
+                        Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: Colors.blue,
+                          ),
                           padding: const EdgeInsets.only(bottom: 20),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(10),
-                            // child: FadeInImage(
-                            //   placeholder: const AssetImage(
-                            //     AppAssets.placeholderLaundry,
-                            //   ),
-                            //   image: NetworkImage(
-                            //     '${AppConstants.baseImageURL}/promo/${item.image}',
-                            //   ),
-                            //   fit: BoxFit.cover,
-                            //   imageErrorBuilder: (context, error, stackTrace) {
-                            //     return const Icon(Icons.error);
-                            //   },
-                            // ),
-                            child: ExtendedImage.network(
-                              '${AppConstants.baseImageURL}/promo/${item.image}',
-                              fit: BoxFit.cover,
-                              cache: true,
-                              shape: BoxShape.rectangle,
-                              //cancelToken: cancellationToken,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Code:',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.normal,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                                DView.height(4),
+                                Text(
+                                  item.uniqueCode,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                  ),
+                                ),
+                                DView.height(4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      AppFormat.justDate(item.startedAt),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    DView.width(2),
+                                    const Text(
+                                      ' - ',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    DView.width(2),
+                                    Text(
+                                      AppFormat.justDate(item.endedAt),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.normal,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -365,7 +400,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  item.shop.name,
+                                  item.name,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 20,
@@ -376,19 +411,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '${AppFormat.shortPrice(item.newPrice)} /kg',
+                                      AppFormat.longPrice(item.amount),
                                       style: const TextStyle(
                                         color: Colors.blue,
                                       ),
                                     ),
-                                    DView.width(16),
-                                    Text(
-                                      '${AppFormat.shortPrice(item.oldPrice)} /kg',
-                                      style: const TextStyle(
-                                        color: Colors.red,
-                                        decoration: TextDecoration.lineThrough,
-                                      ),
-                                    )
                                   ],
                                 ),
                               ],
@@ -421,7 +448,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
   Consumer recommendations() {
     return Consumer(
       builder: (_, wiRef, __) {
-        List<ShopModel> list = wiRef.watch(homeRecommendationListProvider);
+        List<SportArenaModel> list = wiRef.watch(homeRecommendationListProvider);
 
         return Column(
           children: [
@@ -450,11 +477,11 @@ class _HomeViewState extends ConsumerState<HomeView> {
                   scrollDirection: Axis.horizontal,
                   itemCount: list.length,
                   itemBuilder: (context, index) {
-                    ShopModel item = list[index];
+                    SportArenaModel item = list[index];
 
                     return GestureDetector(
                       onTap: () {
-                        Nav.push(context, DetailShopPage(shop: item));
+                        Nav.push(context, DetailSportArenaPage(sportArena: item));
                       },
                       child: Container(
                         margin: EdgeInsets.fromLTRB(
@@ -469,16 +496,8 @@ class _HomeViewState extends ConsumerState<HomeView> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              // child: FadeInImage(
-                              //   placeholder: const AssetImage(AppAssets.placeholderLaundry),
-                              //   image: NetworkImage('${AppConstants.baseImageURL}/shop/${item.image}'),
-                              //   fit: BoxFit.cover,
-                              //   imageErrorBuilder: (context, error, stackTrace) {
-                              //     return const Icon(Icons.error);
-                              //   },
-                              // ),
                               child: ExtendedImage.network(
-                                '${AppConstants.baseImageURL}/shop/${item.image}',
+                                '${AppConstants.baseImageURL}/${item.image}',
                                 fit: BoxFit.cover,
                                 cache: true,
                                 shape: BoxShape.rectangle,
@@ -511,29 +530,6 @@ class _HomeViewState extends ConsumerState<HomeView> {
                               right: 8,
                               child: Column(
                                 children: [
-                                  Row(
-                                    children: ['Regular', 'Express'].map((e) {
-                                      return Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.8),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        margin: const EdgeInsets.only(right: 4),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        child: Text(
-                                          e,
-                                          style: const TextStyle(
-                                            height: 1,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  DView.height(8),
                                   Container(
                                     width: double.infinity,
                                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
@@ -577,7 +573,7 @@ class _HomeViewState extends ConsumerState<HomeView> {
                                         ),
                                         DView.height(4),
                                         Text(
-                                          item.location,
+                                          '${item.district}, ${item.city}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(

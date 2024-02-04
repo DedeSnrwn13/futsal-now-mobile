@@ -3,14 +3,14 @@ import 'package:futsal_now_mobile/config/app_assets.dart';
 import 'package:futsal_now_mobile/config/app_colors.dart';
 import 'package:futsal_now_mobile/config/app_format.dart';
 import 'package:futsal_now_mobile/config/nav.dart';
-import 'package:futsal_now_mobile/models/laundry_model.dart';
-import 'package:futsal_now_mobile/pages/detail_shop_page.dart';
+import 'package:futsal_now_mobile/models/booking_model.dart';
+import 'package:futsal_now_mobile/pages/detail_sport_arena_page.dart';
 import 'package:flutter/material.dart';
 
-class DetailLaundryPage extends StatelessWidget {
-  const DetailLaundryPage({super.key, required this.laundry});
+class DetailBookingPage extends StatelessWidget {
+  const DetailBookingPage({super.key, required this.booking});
 
-  final LaundryModel laundry;
+  final BookingModel booking;
 
   @override
   Widget build(BuildContext context) {
@@ -31,27 +31,16 @@ class DetailLaundryPage extends StatelessWidget {
             ),
           ),
           DView.height(16),
-          itemInfo(Icons.sell, AppFormat.longPrice(laundry.total)),
+          itemInfo(Icons.sell, AppFormat.longPrice(booking.totalPrice)),
           divider(),
-          itemInfo(Icons.event, AppFormat.fullDate(laundry.createdAt)),
+          itemInfo(Icons.event, AppFormat.fullDate(booking.createdAt)),
           divider(),
           InkWell(
             onTap: () {
-              Nav.push(context, DetailShopPage(shop: laundry.shop));
+              Nav.push(context, DetailSportArenaPage(sportArena: booking.ground.sportArena));
             },
-            child: itemInfo(Icons.store, laundry.shop.name),
+            child: itemInfo(Icons.store, booking.ground.sportArena.name),
           ),
-          divider(),
-          itemInfo(Icons.shopping_basket_outlined, '${laundry.weight}kg'),
-          divider(),
-          if (laundry.withPickup) itemInfo(Icons.shopping_bag, 'Pickup'),
-          if (laundry.withPickup) itemDescription(laundry.pickupAddress),
-          if (laundry.withPickup) divider(),
-          if (laundry.withDelivery) itemInfo(Icons.local_shipping, 'Delivery'),
-          if (laundry.withDelivery) itemDescription(laundry.deliveryAddress),
-          if (laundry.withDelivery) divider(),
-          itemInfo(Icons.description, 'Description'),
-          itemDescription(laundry.description),
           divider(),
         ],
       ),
@@ -149,7 +138,7 @@ class DetailLaundryPage extends StatelessWidget {
                     vertical: 30,
                   ),
                   child: Text(
-                    laundry.status,
+                    booking.orderSatus,
                     style: const TextStyle(
                       color: Colors.black87,
                       fontSize: 40,
@@ -167,7 +156,7 @@ class DetailLaundryPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ID: ${laundry.id}',
+                      'ID: ${booking.id}',
                       style: const TextStyle(
                         fontSize: 18,
                         color: Colors.white,

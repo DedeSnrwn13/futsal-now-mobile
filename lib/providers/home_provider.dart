@@ -1,5 +1,5 @@
 import 'package:futsal_now_mobile/models/promo_model.dart';
-import 'package:futsal_now_mobile/models/shop_model.dart';
+import 'package:futsal_now_mobile/models/sport_arena_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final homeCategoryProvider = StateProvider.autoDispose((ref) => 'All');
@@ -29,12 +29,12 @@ class HomePromoList extends StateNotifier<List<PromoModel>> {
 }
 
 final homeRecommendationListProvider =
-    StateNotifierProvider.autoDispose<HomeRecommendationList, List<ShopModel>>((ref) => HomeRecommendationList([]));
+    StateNotifierProvider.autoDispose<HomeRecommendationList, List<SportArenaModel>>((ref) => HomeRecommendationList([]));
 
-class HomeRecommendationList extends StateNotifier<List<ShopModel>> {
+class HomeRecommendationList extends StateNotifier<List<SportArenaModel>> {
   HomeRecommendationList(super.state);
 
-  setData(List<ShopModel> newData) {
+  setData(List<SportArenaModel> newData) {
     state = newData;
   }
 }

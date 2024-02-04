@@ -2,10 +2,10 @@ import 'package:d_view/d_view.dart';
 import 'package:futsal_now_mobile/config/app_colors.dart';
 import 'package:futsal_now_mobile/config/failure.dart';
 import 'package:futsal_now_mobile/config/nav.dart';
-import 'package:futsal_now_mobile/datasources/shop_datasource.dart';
-import 'package:futsal_now_mobile/models/shop_model.dart';
-import 'package:futsal_now_mobile/pages/detail_shop_page.dart';
-import 'package:futsal_now_mobile/providers/search_by_city_provider.dart';
+import 'package:futsal_now_mobile/datasources/sport_arena_datasource.dart';
+import 'package:futsal_now_mobile/models/sport_arena_model.dart';
+import 'package:futsal_now_mobile/pages/detail_sport_arena_page.dart';
+import 'package:futsal_now_mobile/providers/search_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,39 +21,39 @@ class _SearchByCityPageState extends ConsumerState<SearchByCityPage> {
   final editSearch = TextEditingController();
 
   execute() {
-    ShopDatasource.searchByCity(editSearch.text).then((value) {
-      setSearchByCityStatus(ref, 'Loading');
+    SportArenaDatasource.search(editSearch.text).then((value) {
+      setSearchStatus(ref, 'Loading');
 
       value.fold(
         (failure) {
           switch (failure.runtimeType) {
             case ServerFailure:
-              setSearchByCityStatus(ref, 'Server Error');
+              setSearchStatus(ref, 'Server Error');
               break;
             case NotFoundFailure:
-              setSearchByCityStatus(ref, 'Not Found');
+              setSearchStatus(ref, 'Not Found');
               break;
             case ForbiddenFailure:
-              setSearchByCityStatus(ref, 'You don\'t have access');
+              setSearchStatus(ref, 'You don\'t have access');
               break;
             case BadRequestFailure:
-              setSearchByCityStatus(ref, 'Bad request');
+              setSearchStatus(ref, 'Bad request');
               break;
             case UnauthorisedFailure:
-              setSearchByCityStatus(ref, 'Unauthorised');
+              setSearchStatus(ref, 'Unauthorised');
               break;
             default:
-              setSearchByCityStatus(ref, 'Request Error');
+              setSearchStatus(ref, 'Request Error');
               break;
           }
         },
         (result) {
-          setSearchByCityStatus(ref, 'Success');
+          setSearchStatus(ref, 'Success');
 
           List data = result['data'];
-          List<ShopModel> list = data.map((e) => ShopModel.fromJson(e)).toList();
+          List<SportArenaModel> list = data.map((e) => SportArenaModel.fromJson(e)).toList();
 
-          ref.read(searchByCityListProvider.notifier).setData(list);
+          ref.read(searchListProvider.notifier).setData(list);
         },
       );
     });
@@ -115,8 +115,8 @@ class _SearchByCityPageState extends ConsumerState<SearchByCityPage> {
       ),
       body: Consumer(
         builder: (_, wiRef, __) {
-          String status = wiRef.watch(searchByCityStatusProvider);
-          List<ShopModel> list = wiRef.watch(searchByCityListProvider);
+          String status = wiRef.watch(searchStatusProvider);
+          List<SportArenaModel> list = wiRef.watch(searchListProvider);
 
           if (status == '') return DView.nothing();
 
@@ -126,11 +126,11 @@ class _SearchByCityPageState extends ConsumerState<SearchByCityPage> {
             return ListView.builder(
               itemCount: list.length,
               itemBuilder: (context, index) {
-                ShopModel shop = list[index];
+                SportArenaModel sportArena = list[index];
 
                 return ListTile(
                   onTap: () {
-                    Nav.push(context, DetailShopPage(shop: shop));
+                    Nav.push(context, DetailSportArenaPage(sportArena: sportArena));
                   },
                   leading: CircleAvatar(
                     backgroundColor: AppColor.primary,
@@ -138,8 +138,8 @@ class _SearchByCityPageState extends ConsumerState<SearchByCityPage> {
                     radius: 18,
                     child: Text('${index + 1}'),
                   ),
-                  title: Text(shop.name),
-                  subtitle: Text(shop.city),
+                  title: Text(sportArena.name),
+                  subtitle: Text("${sportArena.district}, ${sportArena.city}"),
                   trailing: const Icon(Icons.navigate_next),
                 );
               },

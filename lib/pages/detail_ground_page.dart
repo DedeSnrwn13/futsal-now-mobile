@@ -1,20 +1,62 @@
 import 'package:d_info/d_info.dart';
 import 'package:d_view/d_view.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:futsal_now_mobile/config/app_assets.dart';
 import 'package:futsal_now_mobile/config/app_colors.dart';
 import 'package:futsal_now_mobile/config/app_constants.dart';
 import 'package:futsal_now_mobile/config/app_format.dart';
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/material.dart';
-import 'package:futsal_now_mobile/models/shop_model.dart';
+import 'package:futsal_now_mobile/config/failure.dart';
+import 'package:futsal_now_mobile/datasources/sport_arena_datasource.dart';
+import 'package:futsal_now_mobile/models/ground_model.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:futsal_now_mobile/providers/sport_arena_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:whatsapp_unilink/whatsapp_unilink.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
-class DetailShopPage extends StatelessWidget {
-  const DetailShopPage({super.key, required this.shop});
+class DetailGroundPage extends ConsumerStatefulWidget {
+  const DetailGroundPage({super.key, required this.ground});
 
-  final ShopModel shop;
+  final GroundModel ground;
+
+  @override
+  ConsumerState<DetailGroundPage> createState() => _DetailGroundPageState();
+}
+
+class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
+  getGrounds(String sportArenaId, String groundId) {
+    SportArenaDatasource.getGroundById(sportArenaId, groundId).then((value) {
+      value.fold(
+        (failure) {
+          switch (failure.runtimeType) {
+            case ServerFailure:
+              setGroundStatus(ref, 'Server Error');
+              break;
+            case NotFoundFailure:
+              setGroundStatus(ref, 'Error Not Found');
+              break;
+            case ForbiddenFailure:
+              setGroundStatus(ref, 'You don\'t have access');
+              break;
+            case BadRequestFailure:
+              setGroundStatus(ref, 'Bad Request');
+              break;
+            case UnauthorisedFailure:
+              setGroundStatus(ref, 'Unauthorised');
+              break;
+            default:
+              setGroundStatus(ref, 'Request Error');
+              break;
+          }
+        },
+        (result) {
+          setGroundStatus(ref, 'Success');
+        },
+      );
+    });
+  }
 
   launchWA(BuildContext context, String number) async {
     bool? yes = await DInfo.dialogConfirmation(
@@ -26,7 +68,7 @@ class DetailShopPage extends StatelessWidget {
     if (yes ?? false) {
       final link = WhatsAppUnilink(
         phoneNumber: number,
-        text: "Hello, I want to order a laundry service",
+        text: "Hello, I want to booking a futsal filed",
       );
 
       if (await canLaunchUrl(link.asUri())) {
@@ -36,6 +78,20 @@ class DetailShopPage extends StatelessWidget {
         );
       }
     }
+  }
+
+  refresh() {
+    getGrounds(
+      widget.ground.sportArena.id.toString(),
+      widget.ground.id.toString(),
+    );
+  }
+
+  @override
+  void initState() {
+    refresh();
+
+    super.initState();
   }
 
   @override
@@ -48,9 +104,8 @@ class DetailShopPage extends StatelessWidget {
           DView.height(10),
           groupItemInfo(context),
           DView.height(20),
-          category(),
-          DView.height(20),
           description(),
+          DView.height(20),
           DView.height(20),
           Container(
             height: 50,
@@ -58,7 +113,7 @@ class DetailShopPage extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () {},
               child: const Text(
-                'Order',
+                'Booking',
                 style: TextStyle(
                   height: 1,
                   fontSize: 18,
@@ -81,39 +136,11 @@ class DetailShopPage extends StatelessWidget {
           DView.textTitle('Description', color: Colors.black87),
           DView.height(8),
           Text(
-            shop.description,
+            widget.ground.description,
             style: const TextStyle(
               color: Colors.black54,
               fontSize: 16,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Padding category() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          DView.textTitle('Category', color: Colors.black87),
-          DView.height(8),
-          Wrap(
-            children: [
-              'Regular',
-              'Express',
-              'Economical',
-              'Exclusive',
-            ].map((e) {
-              return Chip(
-                label: Text(e, style: const TextStyle(height: 1)),
-                side: const BorderSide(color: AppColor.primary),
-                backgroundColor: Colors.white,
-                visualDensity: const VisualDensity(vertical: -4),
-              );
-            }).toList(),
           ),
         ],
       ),
@@ -132,32 +159,51 @@ class DetailShopPage extends StatelessWidget {
               children: [
                 itemInfo(
                   const Icon(
-                    Icons.local_activity_rounded,
+                    Icons.stadium_outlined,
                     color: AppColor.primary,
                     size: 20,
                   ),
-                  shop.city,
+                  widget.ground.sportArena.name,
                 ),
-                DView.height(6),
+                DView.height(8),
                 itemInfo(
                   const Icon(
                     Icons.location_on,
                     color: AppColor.primary,
                     size: 20,
                   ),
-                  shop.location,
+                  '${widget.ground.sportArena.district}, ${widget.ground.sportArena.city}',
                 ),
-                DView.height(6),
+                DView.height(8),
                 GestureDetector(
-                  onTap: () => launchWA(context, shop.whatsapp),
+                  onTap: () => launchWA(context, widget.ground.sportArena.waNumber),
                   child: itemInfo(
                     Image.asset(
                       AppAssets.wa,
                       width: 20,
                     ),
-                    shop.whatsapp,
+                    widget.ground.sportArena.waNumber,
                   ),
                 ),
+                DView.height(8),
+                itemInfo(
+                  const Icon(
+                    Icons.people,
+                    color: AppColor.primary,
+                    size: 20,
+                  ),
+                  '${widget.ground.capacity.toString()} people',
+                ),
+                DView.height(8),
+                itemInfo(
+                  const Icon(
+                    Icons.event_available_outlined,
+                    color: AppColor.primary,
+                    size: 20,
+                  ),
+                  widget.ground.isAvailable.toString() == 'true' ? 'Tersedia' : 'Tidak tersedia',
+                ),
+                DView.height(8),
               ],
             ),
           ),
@@ -166,7 +212,7 @@ class DetailShopPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                AppFormat.longPrice(shop.price),
+                AppFormat.longPrice(widget.ground.rentalPrice),
                 textAlign: TextAlign.right,
                 style: const TextStyle(
                   height: 1,
@@ -175,7 +221,6 @@ class DetailShopPage extends StatelessWidget {
                   color: AppColor.primary,
                 ),
               ),
-              const Text('/kg'),
             ],
           ),
         ],
@@ -193,11 +238,27 @@ class DetailShopPage extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(30),
-              child: ExtendedImage.network(
-                '${AppConstants.baseImageURL}/shop/${shop.image}',
-                fit: BoxFit.cover,
-                cache: true,
-                shape: BoxShape.rectangle,
+              child: CarouselSlider(
+                options: CarouselOptions(
+                  height: 400.0,
+                  enlargeCenterPage: true,
+                  autoPlay: true,
+                  aspectRatio: 1,
+                  onPageChanged: (index, reason) {
+                    // Handle page change if needed
+                  },
+                ),
+                items: widget.ground.image.map<Widget>((filename) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ExtendedImage.network(
+                      '${AppConstants.baseImageURL}/${filename['filename']}',
+                      fit: BoxFit.cover,
+                      cache: true,
+                      shape: BoxShape.rectangle,
+                    ),
+                  );
+                }).toList(),
               ),
             ),
             Align(
@@ -222,7 +283,7 @@ class DetailShopPage extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        shop.name,
+                        widget.ground.name,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 24,
@@ -233,7 +294,7 @@ class DetailShopPage extends StatelessWidget {
                       Row(
                         children: [
                           RatingBar.builder(
-                            initialRating: shop.rate,
+                            initialRating: widget.ground.rate ?? 0,
                             itemCount: 5,
                             allowHalfRating: true,
                             itemPadding: const EdgeInsets.all(0),
@@ -248,7 +309,7 @@ class DetailShopPage extends StatelessWidget {
                           ),
                           DView.width(4),
                           Text(
-                            '(${shop.rate})',
+                            '(${widget.ground.rate})',
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 11,
@@ -256,18 +317,6 @@ class DetailShopPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      !shop.pickup && !shop.delivery
-                          ? DView.nothing()
-                          : Padding(
-                              padding: const EdgeInsets.only(top: 16),
-                              child: Row(
-                                children: [
-                                  if (shop.pickup) childOrder('Pickup'),
-                                  if (shop.delivery) DView.width(8),
-                                  if (shop.delivery) childOrder('Delivery'),
-                                ],
-                              ),
-                            ),
                     ],
                   ),
                 ),

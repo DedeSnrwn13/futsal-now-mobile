@@ -1,49 +1,55 @@
-import 'shop_model.dart';
-
 class PromoModel {
   int id;
-  String image;
-  int shopId;
-  double oldPrice;
-  double newPrice;
+  String name;
   String description;
+  String uniqueCode;
+  String type;
+  double amount;
+  DateTime startedAt;
+  DateTime endedAt;
+  int status;
   DateTime createdAt;
   DateTime updatedAt;
-  ShopModel shop;
 
   PromoModel({
     required this.id,
-    required this.image,
-    required this.shopId,
-    required this.oldPrice,
-    required this.newPrice,
+    required this.name,
     required this.description,
+    required this.uniqueCode,
+    required this.type,
+    required this.amount,
+    required this.startedAt,
+    required this.endedAt,
+    required this.status,
     required this.createdAt,
     required this.updatedAt,
-    required this.shop,
   });
 
   factory PromoModel.fromJson(Map<String, dynamic> json) => PromoModel(
         id: json["id"],
-        image: json["image"],
-        shopId: json["shop_id"],
-        oldPrice: json["old_price"]?.toDouble(),
-        newPrice: json["new_price"]?.toDouble(),
+        name: json["name"],
         description: json["description"],
+        uniqueCode: json["unique_code"],
+        type: json["type"],
+        amount: json["amount"]?.toDouble(),
+        startedAt: DateTime.parse(json["started_at"]).toLocal(),
+        endedAt: DateTime.parse(json["ended_at"]).toLocal(),
+        status: json["status"],
         createdAt: DateTime.parse(json["created_at"]).toLocal(),
         updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
-        shop: ShopModel.fromJson(json["shop"]),
       );
 
   Map<String, dynamic> toJson() => {
         "id": id,
-        "image": image,
-        "shop_id": shopId,
-        "old_price": oldPrice,
-        "new_price": newPrice,
+        "name": name,
         "description": description,
+        "unique_code": uniqueCode,
+        "type": type,
+        "amount": amount,
+        "started_at": startedAt.toIso8601String(),
+        "ended_at": endedAt.toIso8601String(),
+        "status": status,
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
-        "shop": shop.toJson(),
       };
 }

@@ -205,14 +205,14 @@ class AccountView extends StatelessWidget {
                 showAboutDialog(
                   context: context,
                   applicationIcon: const Icon(
-                    Icons.local_laundry_service,
+                    Icons.sports_soccer_outlined,
                     size: 50,
                     color: AppColor.primary,
                   ),
                   applicationName: 'FutsalNow',
                   applicationVersion: 'v1.0.0',
                   children: [
-                    const Text('Laundry Market App to monitor your laundry status.'),
+                    const Text('Application for booking futsal fields. \n===========================\n Develop by: Dede Sunarwan'),
                   ],
                 );
               },
