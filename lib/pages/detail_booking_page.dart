@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:d_info/d_info.dart';
 import 'package:d_view/d_view.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +29,51 @@ class DetailBookingPage extends ConsumerStatefulWidget {
 
 class _DetailBookingPageState extends ConsumerState<DetailBookingPage> {
   bool hasReviewed = false;
+
+  submitReview(double rating, String comment) {
+    SportArenaDatasource.submitReview(
+      widget.booking.ground.sportArena.id.toString(),
+      widget.booking.ground.id.toString(),
+      rating,
+      comment,
+    ).then((value) {
+      setSubmitReviewtatus(ref, 'Loading');
+
+      value.fold(
+        (failure) {
+          switch (failure.runtimeType) {
+            case ServerFailure:
+              setSubmitReviewtatus(ref, 'Server Error');
+              break;
+            case NotFoundFailure:
+              setSubmitReviewtatus(ref, 'Not Found');
+              break;
+            case ForbiddenFailure:
+              setSubmitReviewtatus(ref, 'You don\'t have access');
+              break;
+            case BadRequestFailure:
+              setSubmitReviewtatus(ref, 'Bad request');
+              break;
+            case UnauthorisedFailure:
+              setSubmitReviewtatus(ref, 'Unauthorised');
+              break;
+            default:
+              setSubmitReviewtatus(ref, 'Request Error');
+              break;
+          }
+        },
+        (result) {
+          setSubmitReviewtatus(ref, 'Success');
+
+          DInfo.toastSuccess('Review submitted successfuly');
+
+          setState(() {
+            hasReviewed = true;
+          });
+        },
+      );
+    });
+  }
 
   launchWA(BuildContext context, String number) async {
     bool? yes = await DInfo.dialogConfirmation(
@@ -104,46 +151,7 @@ class _DetailBookingPageState extends ConsumerState<DetailBookingPage> {
                   print('Comment: $comment, Rating: $rating');
                 }
 
-                SportArenaDatasource.submitReview(
-                  widget.booking.ground.sportArena.id.toString(),
-                  widget.booking.ground.id.toString(),
-                  comment.toString(),
-                  rating.toString(),
-                ).then((value) {
-                  setSubmitReviewtatus(ref, 'Loading');
-
-                  value.fold(
-                    (failure) {
-                      switch (failure.runtimeType) {
-                        case ServerFailure:
-                          setSubmitReviewtatus(ref, 'Server Error');
-                          break;
-                        case NotFoundFailure:
-                          setSubmitReviewtatus(ref, 'Not Found');
-                          break;
-                        case ForbiddenFailure:
-                          setSubmitReviewtatus(ref, 'You don\'t have access');
-                          break;
-                        case BadRequestFailure:
-                          setSubmitReviewtatus(ref, 'Bad request');
-                          break;
-                        case UnauthorisedFailure:
-                          setSubmitReviewtatus(ref, 'Unauthorised');
-                          break;
-                        default:
-                          setSubmitReviewtatus(ref, 'Request Error');
-                          break;
-                      }
-                    },
-                    (result) {
-                      setSubmitReviewtatus(ref, 'Success');
-
-                      setState(() {
-                        hasReviewed = true; // Setelah memberikan ulasan, atur hasReviewed menjadi true
-                      });
-                    },
-                  );
-                });
+                submitReview(rating.toDouble(), comment.toString());
               },
               hasReviewed: hasReviewed,
             )

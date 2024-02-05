@@ -52,7 +52,6 @@ class _ReviewFormState extends State<ReviewForm> {
               direction: Axis.horizontal,
               allowHalfRating: true,
               itemCount: 5,
-              maxRating: 5,
               itemSize: 30.0,
               itemBuilder: (context, _) => const Icon(
                 Icons.star,
@@ -80,8 +79,7 @@ class _ReviewFormState extends State<ReviewForm> {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                if (_formKey.currentState?.validate() ?? false) {
-                  // Jika form valid, panggil onSubmit
+                if (_formKey.currentState!.validate()) {
                   widget.onSubmit(comment, rating);
                 }
               },

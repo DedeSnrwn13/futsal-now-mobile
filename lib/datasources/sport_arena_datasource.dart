@@ -121,7 +121,7 @@ class SportArenaDatasource {
   static Future<Either<Failure, Map>> submitReview(
     String sportArenaId,
     String groundId,
-    String rate,
+    double rate,
     String comment,
   ) async {
     Uri url = Uri.parse('${AppConstants.baseURL}/sport-arenas/$sportArenaId/grounds/$groundId/reviews');
@@ -133,9 +133,9 @@ class SportArenaDatasource {
         url,
         headers: AppRequest.header(token),
         body: {
-          'ground-id': groundId.toString(),
+          'ground_id': groundId.toString(),
           'user_id': user!.id.toString(),
-          'rate': rate,
+          'rate': rate.toString(),
           'comment': comment,
         },
       );
