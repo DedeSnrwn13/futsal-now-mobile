@@ -9,7 +9,6 @@ class GroundReviewModel {
   String? comment;
   DateTime createdAt;
   DateTime updatedAt;
-  GroundModel ground;
   UserModel user;
 
   GroundReviewModel({
@@ -20,7 +19,6 @@ class GroundReviewModel {
     this.comment,
     required this.createdAt,
     required this.updatedAt,
-    required this.ground,
     required this.user,
   });
 
@@ -28,11 +26,10 @@ class GroundReviewModel {
         id: json["id"],
         groundId: json["ground_id"],
         userId: json["user_id"],
-        rate: json["rate"],
+        rate: json["rate"].toDouble(),
         comment: json["comment"],
         createdAt: DateTime.parse(json["created_at"]).toLocal(),
         updatedAt: DateTime.parse(json["updated_at"]).toLocal(),
-        ground: GroundModel.fromJson(json["ground"]),
         user: UserModel.fromJson(json["user"]),
       );
 
@@ -44,7 +41,6 @@ class GroundReviewModel {
         "comment": comment,
         "created_at": createdAt.toIso8601String(),
         "updated_at": updatedAt.toIso8601String(),
-        "ground": ground.toJson(),
         "user": user.toJson(),
       };
 }

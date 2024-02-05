@@ -11,7 +11,7 @@ class BookingModel {
   String endedAt;
   double totalPrice;
   String orderNumber;
-  String orderSatus;
+  String orderStatus;
   String paymentMethod;
   String paymentStatus;
   DateTime? paidAt;
@@ -32,7 +32,7 @@ class BookingModel {
     required this.endedAt,
     required this.totalPrice,
     required this.orderNumber,
-    required this.orderSatus,
+    required this.orderStatus,
     required this.paymentMethod,
     required this.paymentStatus,
     this.paidAt,
@@ -54,7 +54,7 @@ class BookingModel {
         endedAt: json["ended_at"],
         totalPrice: json["total_price"].toDouble(),
         orderNumber: json["order_number"],
-        orderSatus: json["order_status"],
+        orderStatus: json["order_status"],
         paymentMethod: json["payment_method"],
         paymentStatus: json["payment_status"],
         paidAt: json["paid_at"] != null ? DateTime.parse(json["paid_at"]).toLocal() : null,
@@ -76,7 +76,7 @@ class BookingModel {
         "ended_at": endedAt,
         "total_price": totalPrice,
         "order_number": orderNumber,
-        "order_status": orderSatus,
+        "order_status": orderStatus,
         "payment_method": paymentMethod,
         "payment_status": paymentStatus,
         "paid_at": paidAt,

@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:d_info/d_info.dart';
 import 'package:d_input/d_input.dart';
 import 'package:d_view/d_view.dart';
@@ -189,7 +187,7 @@ class _MyBookingViewState extends ConsumerState<MyBookingView> {
                 if (statusCategory == 'All') {
                   list = List.from(listBackup);
                 } else {
-                  list = listBackup.where((element) => element.orderSatus == statusCategory).toList();
+                  list = listBackup.where((element) => element.orderStatus == statusCategory).toList();
                 }
 
                 if (list.isEmpty) {

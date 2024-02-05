@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:d_info/d_info.dart';
 import 'package:d_view/d_view.dart';
@@ -13,11 +12,13 @@ import 'package:flutter/material.dart';
 import 'package:futsal_now_mobile/config/app_response.dart';
 import 'package:futsal_now_mobile/config/app_session.dart';
 import 'package:futsal_now_mobile/config/failure.dart';
+import 'package:futsal_now_mobile/config/nav.dart';
 import 'package:futsal_now_mobile/datasources/booking_datasource.dart';
 import 'package:futsal_now_mobile/datasources/sport_arena_datasource.dart';
 import 'package:futsal_now_mobile/models/ground_model.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:futsal_now_mobile/models/user_model.dart';
+import 'package:futsal_now_mobile/pages/payment_page.dart';
 import 'package:futsal_now_mobile/providers/my_booking_provider.dart';
 import 'package:futsal_now_mobile/providers/sport_arena_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -116,6 +117,14 @@ class _DetailGroundPageState extends ConsumerState<DetailGroundPage> {
         },
         (result) {
           setBookingStatus(ref, 'Success');
+
+          Nav.push(
+            context,
+            PaymentPage(
+              snapToken: result['snap_token'],
+              orderNumber: result['order_number'],
+            ),
+          );
         },
       );
     });

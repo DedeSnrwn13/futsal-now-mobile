@@ -11,9 +11,11 @@ import 'package:futsal_now_mobile/config/failure.dart';
 import 'package:futsal_now_mobile/config/nav.dart';
 import 'package:futsal_now_mobile/datasources/sport_arena_datasource.dart';
 import 'package:futsal_now_mobile/models/ground_model.dart';
+import 'package:futsal_now_mobile/models/ground_review_model.dart';
 import 'package:futsal_now_mobile/models/sport_arena_model.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:futsal_now_mobile/pages/detail_ground_page.dart';
+import 'package:futsal_now_mobile/pages/review_item.dart';
 import 'package:futsal_now_mobile/providers/sport_arena_provider.dart';
 import 'package:futsal_now_mobile/widgets/error_background.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -67,6 +69,43 @@ class _DetailSportArenaPageState extends ConsumerState<DetailSportArenaPage> {
     });
   }
 
+  getReviews(String sportArenaId) {
+    SportArenaDatasource.getGroundReview(sportArenaId).then((value) {
+      value.fold(
+        (failure) {
+          switch (failure.runtimeType) {
+            case ServerFailure:
+              setSportArenaGroundStatus(ref, 'Server Error');
+              break;
+            case NotFoundFailure:
+              setSportArenaGroundStatus(ref, 'Error Not Found');
+              break;
+            case ForbiddenFailure:
+              setSportArenaGroundStatus(ref, 'You don\'t have access');
+              break;
+            case BadRequestFailure:
+              setSportArenaGroundStatus(ref, 'Bad Request');
+              break;
+            case UnauthorisedFailure:
+              setSportArenaGroundStatus(ref, 'Unauthorised');
+              break;
+            default:
+              setSportArenaGroundStatus(ref, 'Request Error');
+              break;
+          }
+        },
+        (result) {
+          setGroundSReviewtatus(ref, 'Success');
+
+          List data = result['data'];
+          List<GroundReviewModel> reviews = data.map((e) => GroundReviewModel.fromJson(e)).toList();
+
+          ref.read(groundReviewListProvider.notifier).setData(reviews);
+        },
+      );
+    });
+  }
+
   launchWA(BuildContext context, String number) async {
     bool? yes = await DInfo.dialogConfirmation(
       context,
@@ -91,6 +130,7 @@ class _DetailSportArenaPageState extends ConsumerState<DetailSportArenaPage> {
 
   refresh() {
     getGrounds(widget.sportArena.id.toString());
+    getReviews(widget.sportArena.id.toString());
   }
 
   @override
@@ -115,7 +155,15 @@ class _DetailSportArenaPageState extends ConsumerState<DetailSportArenaPage> {
           description(),
           DView.height(20),
           grounds(context),
-          DView.height(20),
+          DView.height(50),
+          Consumer(
+            builder: (context, wiRef, _) {
+              List<GroundReviewModel> reviews = wiRef.watch(groundReviewListProvider);
+
+              return reviewsList(reviews);
+            },
+          ),
+          DView.height(30),
         ],
       ),
     );
@@ -570,6 +618,41 @@ class _DetailSportArenaPageState extends ConsumerState<DetailSportArenaPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget reviewsList(List<GroundReviewModel> reviews) {
+    return Consumer(
+      builder: (context, wiRef, _) {
+        List<GroundReviewModel> updatedReviews = wiRef.watch(groundReviewListProvider);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: DView.textTitle('Reviews', color: Colors.black),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: updatedReviews.length,
+                itemBuilder: (context, index) {
+                  final review = updatedReviews[index];
+                  return ReviewItem(
+                    name: review.user.name,
+                    comment: review.comment.toString(),
+                    rating: review.rate,
+                    date: review.createdAt,
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
